@@ -30,8 +30,8 @@ A rendszer Telegram bot segítségével távolról vezérelhető, Cloudflare Tun
 ---
 ## 📸 Demó / Képernyőképek
 
-![Dashboard](assets/dashboard.png)
-![Nyugtafeldolgozás](assets/nyugta.png)
+![Dashboard](assest/dashboard.png)
+![Nyugtafeldolgozás](assest/nyugta.png)
 ## 📁 Projekt Mappaszerkezet
 
 ```text
