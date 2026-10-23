@@ -28,7 +28,10 @@ A rendszer Telegram bot segítségével távolról vezérelhető, Cloudflare Tun
   * **Egy-Kattintásos Távoli Leállítás**: A webszerverről közvetlenül leállítható a Python szerver és a Cloudflare alagút (`/api/shutdown`), visszaállítva a rendszert alacsony fogyasztású készenlétbe.
 
 ---
+## 📸 Demó / Képernyőképek
 
+![Dashboard](assets/dashboard.png)
+![Nyugtafeldolgozás](assets/nyugta.png)
 ## 📁 Projekt Mappaszerkezet
 
 ```text
