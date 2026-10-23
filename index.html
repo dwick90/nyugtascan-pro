@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="hu" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NyugtaScan Pro - Élő Költés Analitika & Nyugtanyilvántartó</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        receipt: ['"Courier Prime"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        .receipt-paper {
+            background: #fffef7;
+            color: #1a1a1a;
+            position: relative;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+        .receipt-paper::after {
+            content: "";
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            right: 0;
+            height: 10px;
+            background: linear-gradient(-45deg, transparent 5px, #fffef7 0), linear-gradient(45deg, transparent 5px, #fffef7 0);
+            background-repeat: repeat-x;
+            background-size: 10px 10px;
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.4);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.7);
+        }
+    </style>
+</head>
+<body class="h-full font-sans antialiased bg-slate-900 text-slate-100 flex flex-col min-h-screen">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Logo & Title -->
+                <div class="flex items-center space-x-3">
+                    <div class="p-2 bg-gradient-to-tr from-indigo-600 to-violet-500 rounded-xl shadow-lg shadow-indigo-500/30">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-lg leading-tight text-white flex items-center gap-2">
+                            NyugtaScan <span class="text-xs px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30">Élő Backend</span>
+                        </h1>
+                        <p class="text-xs text-slate-400">Automatizált költés-analitika</p>
+                    </div>
+                </div>
+
+                <!-- Desktop Navigation Tabs -->
+                <nav class="hidden md:flex space-x-1 bg-slate-900/60 p-1 rounded-xl border border-slate-700/50">
+                    <button onclick="switchTab('analytics')" id="nav-analytics" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center space-x-2 bg-indigo-600 text-white shadow-sm">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
+                        <span>Kimutatások</span>
+                    </button>
+                    <button onclick="switchTab('receipts')" id="nav-receipts" class="tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-slate-800">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        <span>Nyugta Kereső</span>
+                    </button>
+                </nav>
+
+                <!-- Actions: Refresh Button, Shutdown Button & Status Indicator -->
+                <div class="flex items-center space-x-3">
+                    
+                    <!-- Online / Offline Status Badge -->
+                    <div id="status-badge" class="flex items-center space-x-2 text-xs bg-slate-800 text-slate-400 px-3 py-1.5 rounded-full border border-slate-700">
+                        <span id="status-dot" class="w-2 h-2 rounded-full bg-slate-500"></span>
+                        <span id="status-text">Betöltés...</span>
+                    </div>
+
+                    <!-- REFRESH BUTTON -->
+                    <button id="refresh-btn" onclick="fetchDataFromApi()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-lg shadow-indigo-600/30 transition flex items-center space-x-2">
+                        <svg id="refresh-icon" class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span>Frissítés</span>
+                    </button>
+                    
+                    <!-- SZERVER LEÁLLÍTÁSA GOMB -->
+                    <button onclick="shutdownServer()" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 active:scale-95 text-white font-semibold text-xs rounded-xl shadow-lg shadow-rose-600/30 transition flex items-center space-x-1.5">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.636 5.636a9 9 0 1012.728 0M12 3v9"></path>
+                        </svg>
+                        <span>Leállítás</span>
+                    </button>
+                    
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Mobile Navigation Bottom Bar -->
+        <div class="md:hidden flex border-t border-slate-700/60 bg-slate-800/95 justify-around py-2 px-1">
+            <button onclick="switchTab('analytics')" id="mobile-nav-analytics" class="flex flex-col items-center text-xs p-2 text-indigo-400 font-semibold">
+                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z"></path></svg>
+                Kimutatás
+            </button>
+            <button onclick="switchTab('receipts')" id="mobile-nav-receipts" class="flex flex-col items-center text-xs p-2 text-slate-400">
+                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                Nyugták
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- Live Sync Status Banner -->
+        <div id="live-banner" class="mb-6 p-4 rounded-2xl bg-slate-800/80 border border-slate-700/80 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div id="banner-icon-bg" class="p-2.5 bg-indigo-500/20 text-indigo-400 rounded-xl">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                </div>
+                <div>
+                    <div class="text-sm font-semibold text-slate-200" id="banner-title">Adatok betöltése folyamatban...</div>
+                    <div class="text-xs text-slate-400" id="banner-subtitle">Várakozás a backend válaszára...</div>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <label class="flex items-center space-x-2 text-xs text-slate-300 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/80 cursor-pointer">
+                    <input type="checkbox" id="auto-refresh-toggle" onchange="toggleAutoRefresh()" class="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500">
+                    <span>Auto-frissítés (10mp)</span>
+                </label>
+                <div class="text-xs text-slate-500 font-mono" id="last-updated-time">Utolsó frissítés: -</div>
+            </div>
+        </div>
+
+        <!-- TAB 1: ANALYTICS & REPORTS -->
+        <section id="tab-analytics" class="space-y-6">
+            
+            <!-- Filters & Date Range Bar -->
+            <div class="bg-slate-800/80 rounded-2xl p-5 border border-slate-700/70 shadow-xl space-y-4">
+                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                    
+                    <div class="flex flex-wrap items-center gap-3">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Dátum szűrés:</span>
+                        <div class="flex items-center space-x-2 bg-slate-900/80 p-1.5 rounded-xl border border-slate-700">
+                            <input type="date" id="filter-date-from" class="bg-transparent text-xs text-slate-200 px-2 py-1 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" onchange="applyFilters()">
+                            <span class="text-slate-500 text-xs">-</span>
+                            <input type="date" id="filter-date-to" class="bg-transparent text-xs text-slate-200 px-2 py-1 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500" onchange="applyFilters()">
+                        </div>
+                    </div>
+
+                    <!-- Quick Date Range Buttons -->
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <button onclick="setQuickDateRange('all')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition">Összes</button>
+                        <button onclick="setQuickDateRange('this_month')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition">Ez a hónap</button>
+                        <button onclick="setQuickDateRange('last_month')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition">Előző hónap</button>
+                        <button onclick="setQuickDateRange('last_30')" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-700 text-slate-300 hover:bg-slate-600 transition">Utolsó 30 nap</button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 pt-3 border-t border-slate-700/50">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Kategória</label>
+                        <select id="filter-category" onchange="applyFilters()" class="w-full bg-slate-900 text-slate-200 text-xs rounded-lg px-3 py-2 border border-slate-700 focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                            <option value="ALL">Minden kategória</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Üzlet</label>
+                        <select id="filter-store" onchange="applyFilters()" class="w-full bg-slate-900 text-slate-200 text-xs rounded-lg px-3 py-2 border border-slate-700 focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                            <option value="ALL">Minden üzlet</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="resetFilters()" class="w-full py-2 px-3 bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 font-medium rounded-lg transition border border-slate-600 flex items-center justify-center space-x-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            <span>Szűrők Alaphelyzetbe</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Cards Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <div class="bg-gradient-to-br from-slate-800 to-slate-800/90 rounded-2xl p-5 border border-slate-700/80 shadow-lg relative overflow-hidden">
+                    <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Összes Költés</span>
+                    <div class="mt-2 flex items-baseline">
+                        <span id="kpi-total-spend" class="text-3xl font-extrabold text-white">0</span>
+                        <span class="ml-1.5 text-indigo-400 font-medium">Ft</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2" id="kpi-spend-subtitle">Kiválasztott időszakban</p>
+                </div>
+
+                <div class="bg-gradient-to-br from-slate-800 to-slate-800/90 rounded-2xl p-5 border border-slate-700/80 shadow-lg relative overflow-hidden">
+                    <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Nyugták Száma</span>
+                    <div class="mt-2 flex items-baseline">
+                        <span id="kpi-receipt-count" class="text-3xl font-extrabold text-white">0</span>
+                        <span class="ml-1.5 text-emerald-400 font-medium">db</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2" id="kpi-items-count">0 vásárolt tétel</p>
+                </div>
+
+                <div class="bg-gradient-to-br from-slate-800 to-slate-800/90 rounded-2xl p-5 border border-slate-700/80 shadow-lg relative overflow-hidden">
+                    <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Átlagos Kosárérték</span>
+                    <div class="mt-2 flex items-baseline">
+                        <span id="kpi-avg-basket" class="text-3xl font-extrabold text-white">0</span>
+                        <span class="ml-1.5 text-violet-400 font-medium">Ft / nyugta</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2">Átlag költés vásárlásonként</p>
+                </div>
+
+                <div class="bg-gradient-to-br from-slate-800 to-slate-800/90 rounded-2xl p-5 border border-slate-700/80 shadow-lg relative overflow-hidden">
+                    <span class="text-xs font-semibold text-slate-400 tracking-wider uppercase">Legfőbb Kategória</span>
+                    <div class="mt-2 truncate">
+                        <span id="kpi-top-category" class="text-2xl font-extrabold text-amber-400 block truncate">-</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-2" id="kpi-top-cat-amount">0 Ft (0%)</p>
+                </div>
+
+            </div>
+
+            <!-- Charts Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Category Pie Chart -->
+                <div class="lg:col-span-5 bg-slate-800/80 rounded-2xl p-5 border border-slate-700/70 shadow-xl flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-200 text-base flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                            Költés Kategóriák Szerint
+                        </h3>
+                    </div>
+                    <div class="relative flex-grow min-h-[260px] flex items-center justify-center">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Timeline Bar Chart -->
+                <div class="lg:col-span-7 bg-slate-800/80 rounded-2xl p-5 border border-slate-700/70 shadow-xl flex flex-col justify-between">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-slate-200 text-base flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                            Költések Alakulása Időben
+                        </h3>
+                        <div class="flex space-x-1 bg-slate-900/60 p-1 rounded-lg border border-slate-700">
+                            <button onclick="setTimeChartGroup('daily')" id="time-group-daily" class="px-2.5 py-1 text-xs rounded font-medium bg-indigo-600 text-white">Napi</button>
+                            <button onclick="setTimeChartGroup('monthly')" id="time-group-monthly" class="px-2.5 py-1 text-xs rounded font-medium text-slate-400 hover:text-white">Havi</button>
+                        </div>
+                    </div>
+                    <div class="relative flex-grow min-h-[260px]">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Detailed Breakdown Table -->
+            <div class="bg-slate-800/80 rounded-2xl p-5 border border-slate-700/70 shadow-xl">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h3 class="font-bold text-slate-200 text-base">Kategória & Alkategória Részletezés</h3>
+                        <p class="text-xs text-slate-400">Élő adatbázisból származó összesített tételek</p>
+                    </div>
+                    <input type="text" id="table-search-input" onkeyup="filterBreakdownTable()" placeholder="Keresés a táblázatban..." class="bg-slate-900 border border-slate-700 text-xs rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-200">
+                </div>
+
+                <div class="overflow-x-auto rounded-xl border border-slate-700/60">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900/80 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">Kategória</th>
+                                <th class="p-3">Alkategória</th>
+                                <th class="p-3 text-right">Tételek száma</th>
+                                <th class="p-3 text-right">Összesen (Ft)</th>
+                                <th class="p-3 text-right">Arány</th>
+                            </tr>
+                        </thead>
+                        <tbody id="breakdown-table-body" class="divide-y divide-slate-700/40">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+
+
+        <!-- TAB 2: RECEIPT SEARCH & THERMAL RECEIPT VIEW -->
+        <section id="tab-receipts" class="space-y-6 hidden">
+            
+            <!-- Search & Filters -->
+            <div class="bg-slate-800/80 rounded-2xl p-5 border border-slate-700/70 shadow-xl space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+                    <div class="md:col-span-6">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Keresés (Üzlet neve, Tétel, Dátum)</label>
+                        <div class="relative">
+                            <input type="text" id="receipt-search-query" oninput="renderReceiptsList()" placeholder="Pl. Lidl, tej, 2026-10..." class="w-full bg-slate-900 text-slate-200 text-sm rounded-xl pl-9 pr-4 py-2.5 border border-slate-700 focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                            <svg class="w-4 h-4 text-slate-400 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Fizetési mód</label>
+                        <select id="receipt-filter-payment" onchange="renderReceiptsList()" class="w-full bg-slate-900 text-slate-200 text-sm rounded-xl px-3 py-2.5 border border-slate-700 focus:ring-1 focus:ring-indigo-500 focus:outline-none">
+                            <option value="ALL">Minden fizetési mód</option>
+                            <option value="bankkártya">Bankkártya</option>
+                            <option value="készpénz">Készpénz</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-3 flex items-end">
+                        <label class="flex items-center space-x-2 bg-slate-900 p-2.5 rounded-xl border border-slate-700 cursor-pointer w-full">
+                            <input type="checkbox" id="receipt-filter-review" onchange="renderReceiptsList()" class="rounded border-slate-700 text-indigo-600 focus:ring-indigo-500">
+                            <span class="text-xs text-slate-300 font-medium">Csak ellenőrzendők</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Receipt Cards Grid -->
+            <div id="receipts-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Receipt Cards rendered dynamically -->
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- MODAL: THERMAL PAPER RECEIPT VIEW -->
+    <div id="receipt-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden animate-fade-in">
+        <div class="relative w-full max-w-md max-h-[90vh] flex flex-col">
+            
+            <!-- Close Button -->
+            <button onclick="closeReceiptModal()" class="absolute -top-3 -right-3 z-10 p-2 bg-slate-800 text-slate-300 hover:text-white rounded-full shadow-lg border border-slate-600 transition">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+
+            <!-- Thermal Paper Container -->
+            <div id="modal-receipt-paper" class="receipt-paper p-6 rounded-t-sm font-receipt text-slate-900 overflow-y-auto max-h-[80vh]">
+                <!-- Content generated dynamically -->
+            </div>
+
+            <!-- Modal Action Buttons -->
+            <div class="bg-slate-800 p-3 rounded-b-xl border-t border-slate-700 flex justify-between items-center">
+                <!-- TÖRLÉS GOMB -->
+                <button id="modal-delete-btn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 shadow-md">
+                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                    </svg>
+                    <span>Törlés</span>
+                </button>
+
+                <div class="flex space-x-2">
+                    <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
+                        <span>Nyomtatás</span>
+                    </button>
+                    <button onclick="closeReceiptModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition">
+                        Bezárás
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+
+    <!-- JAVASCRIPT APP LOGIC -->
+    <script>
+        // State Variables
+        let activeReceipts = [];
+        let activeItems = [];
+        let categoryChartInstance = null;
+        let timelineChartInstance = null;
+        let currentTimelineGroup = 'daily';
+        let autoRefreshTimer = null;
+
+        // Auto-load on Page Startup
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchDataFromApi();
+        });
+
+        // Main Live API Data Fetcher
+        async function fetchDataFromApi() {
+            setLoadingState(true);
+
+            try {
+                const response = await fetch('/api/data', { cache: 'no-store' });
+                if (!response.ok) {
+                    throw new Error(`Szerver válasz hiba: ${response.status}`);
+                }
+
+                const data = await response.json();
+                activeReceipts = data.receipts || [];
+                activeItems = data.items || [];
+                updateStatus(true, `Sikeres csatlakozás (${activeReceipts.length} nyugta, ${activeItems.length} tétel)`);
+
+                populateFilterDropdowns();
+                applyFilters();
+                showToast("Adatok sikeresen frissítve!", "success");
+
+            } catch (err) {
+                console.error("API Lekérdezési hiba:", err);
+                updateStatus(false, "Offline / Csatlakozási hiba (/api/data)");
+                showToast("Nem sikerült kapcsolódni a szerverhez (/api/data)!", "error");
+            } finally {
+                setLoadingState(false);
+                document.getElementById('last-updated-time').innerText = `Utolsó frissítés: ${new Date().toLocaleTimeString('hu-HU')}`;
+            }
+        }
+
+        // UI Loading State Controls
+        function setLoadingState(isLoading) {
+            const btn = document.getElementById('refresh-btn');
+            const icon = document.getElementById('refresh-icon');
+
+            if (isLoading) {
+                btn.disabled = true;
+                icon.classList.add('animate-spin');
+            } else {
+                btn.disabled = false;
+                icon.classList.remove('animate-spin');
+            }
+        }
+
+        // Update Online/Offline Status Indicators
+        function updateStatus(isOnline, message) {
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
+            const title = document.getElementById('banner-title');
+            const sub = document.getElementById('banner-subtitle');
+            const iconBg = document.getElementById('banner-icon-bg');
+
+            if (isOnline) {
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                text.innerText = "Élő kapcsolat";
+                text.className = "text-emerald-400 font-medium";
+                
+                title.innerText = "Adatbázis szinkronizálva";
+                title.className = "text-sm font-semibold text-slate-200";
+                sub.innerText = message;
+                iconBg.className = "p-2.5 bg-emerald-500/20 text-emerald-400 rounded-xl";
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-rose-500";
+                text.innerText = "Szerver nem elérhető";
+                text.className = "text-rose-400 font-medium";
+
+                title.innerText = "A backend szerver nem elérhető";
+                title.className = "text-sm font-semibold text-rose-300";
+                sub.innerText = "Indítsd el a server.py szkriptet a számítógépen.";
+                iconBg.className = "p-2.5 bg-rose-500/20 text-rose-400 rounded-xl";
+            }
+        }
+
+        // Auto Refresh Timer Toggle
+        function toggleAutoRefresh() {
+            const enabled = document.getElementById('auto-refresh-toggle').checked;
+            if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+
+            if (enabled) {
+                autoRefreshTimer = setInterval(() => {
+                    fetchDataFromApi();
+                }, 10000);
+                showToast("Auto-frissítés bekapcsolva (10 másodpercenként)", "info");
+            } else {
+                showToast("Auto-frissítés kikapcsolva", "info");
+            }
+        }
+
+        // Populate Dropdowns
+        function populateFilterDropdowns() {
+            const catSelect = document.getElementById('filter-category');
+            const storeSelect = document.getElementById('filter-store');
+
+            const categories = [...new Set(activeItems.map(i => i.category || 'Egyéb'))].filter(Boolean).sort();
+            catSelect.innerHTML = '<option value="ALL">Minden kategória</option>' + 
+                categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+
+            const stores = [...new Set(activeReceipts.map(r => r.store || 'Ismeretlen'))].filter(Boolean).sort();
+            storeSelect.innerHTML = '<option value="ALL">Minden üzlet</option>' + 
+                stores.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+        }
+
+        // Quick Date Range Filter Buttons
+        function setQuickDateRange(type) {
+            const fromInput = document.getElementById('filter-date-from');
+            const toInput = document.getElementById('filter-date-to');
+
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+
+            if (type === 'all') {
+                fromInput.value = '';
+                toInput.value = '';
+            } else if (type === 'this_month') {
+                fromInput.value = formatDateString(new Date(year, month, 1));
+                toInput.value = formatDateString(now);
+            } else if (type === 'last_month') {
+                fromInput.value = formatDateString(new Date(year, month - 1, 1));
+                toInput.value = formatDateString(new Date(year, month, 0));
+            } else if (type === 'last_30') {
+                const past30 = new Date();
+                past30.setDate(now.getDate() - 30);
+                fromInput.value = formatDateString(past30);
+                toInput.value = formatDateString(now);
+            }
+
+            applyFilters();
+        }
+
+        function resetFilters() {
+            document.getElementById('filter-date-from').value = '';
+            document.getElementById('filter-date-to').value = '';
+            document.getElementById('filter-category').value = 'ALL';
+            document.getElementById('filter-store').value = 'ALL';
+            applyFilters();
+        }
+
+        // Core Analytics Calculation Engine
+        function applyFilters() {
+            const dateFrom = document.getElementById('filter-date-from').value;
+            const dateTo = document.getElementById('filter-date-to').value;
+            const selectedCat = document.getElementById('filter-category').value;
+            const selectedStore = document.getElementById('filter-store').value;
+
+            // Filter Receipts
+            const filteredReceipts = activeReceipts.filter(r => {
+                if (dateFrom && r.receipt_date < dateFrom) return false;
+                if (dateTo && r.receipt_date > dateTo) return false;
+                if (selectedStore !== 'ALL' && r.store !== selectedStore) return false;
+                return true;
+            });
+
+            const filteredReceiptIds = new Set(filteredReceipts.map(r => r.id));
+
+            // Filter Items
+            const filteredItems = activeItems.filter(item => {
+                if (!filteredReceiptIds.has(item.receipt_id)) return false;
+                if (selectedCat !== 'ALL' && (item.category || 'Egyéb') !== selectedCat) return false;
+                return true;
+            });
+
+            // Calculate KPIs
+            const itemsTotal = filteredItems.reduce((sum, item) => sum + (item.line_total || 0), 0);
+            const totalSpend = selectedCat === 'ALL'
+                ? filteredReceipts.reduce((sum, r) => sum + (r.total ?? r.items_sum ?? 0), 0)
+                : itemsTotal;
+            const receiptCount = selectedCat === 'ALL'
+                ? filteredReceipts.length
+                : new Set(filteredItems.map(i => i.receipt_id)).size;
+            const unidentified = selectedCat === 'ALL' ? Math.max(0, totalSpend - itemsTotal) : 0;
+            const avgBasket = receiptCount > 0 ? Math.round(totalSpend / receiptCount) : 0;
+
+            document.getElementById('kpi-total-spend').innerText = formatFt(totalSpend);
+            document.getElementById('kpi-receipt-count').innerText = receiptCount;
+            document.getElementById('kpi-avg-basket').innerText = formatFt(avgBasket);
+            document.getElementById('kpi-items-count').innerText = `${filteredItems.length} vásárolt tétel` + (unidentified > 0 ? ` · ${formatFt(unidentified)} Ft nem azonosított` : '');
+
+            // Category Totals
+            const categorySums = {};
+            filteredItems.forEach(item => {
+                const cat = item.category || 'Egyéb';
+                categorySums[cat] = (categorySums[cat] || 0) + (item.line_total || 0);
+            });
+
+            // Top Category
+            let topCat = '-';
+            let topCatVal = 0;
+            Object.entries(categorySums).forEach(([cat, sum]) => {
+                if (sum > topCatVal) {
+                    topCatVal = sum;
+                    topCat = cat;
+                }
+            });
+
+            const topCatPct = itemsTotal > 0 ? Math.round((topCatVal / itemsTotal) * 100) : 0;
+            document.getElementById('kpi-top-category').innerText = topCat;
+            document.getElementById('kpi-top-cat-amount').innerText = `${formatFt(topCatVal)} Ft (${topCatPct}%)`;
+
+            // Render Charts & Tables
+            renderCategoryChart(categorySums, itemsTotal);
+            renderTimelineChart(filteredItems, filteredReceipts);
+            renderBreakdownTable(filteredItems, itemsTotal);
+            renderReceiptsList();
+        }
+
+        // Render Category Pie / Donut Chart
+        function renderCategoryChart(categorySums, totalSpend) {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            const labels = Object.keys(categorySums);
+            const data = Object.values(categorySums);
+
+            if (categoryChartInstance) categoryChartInstance.destroy();
+            if (labels.length === 0) return;
+
+            const colors = ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#06b6d4', '#f97316', '#14b8a6', '#64748b', '#a855f7'];
+
+            categoryChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: data,
+                        backgroundColor: colors.slice(0, labels.length),
+                        borderColor: '#1e293b',
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', font: { family: 'Inter', size: 11 }, padding: 12 }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    const pct = totalSpend > 0 ? ((val / totalSpend) * 100).toFixed(1) : 0;
+                                    return ` ${context.label}: ${formatFt(val)} Ft (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '68%'
+                }
+            });
+        }
+
+        function setTimeChartGroup(mode) {
+            currentTimelineGroup = mode;
+            document.getElementById('time-group-daily').className = mode === 'daily' 
+                ? 'px-2.5 py-1 text-xs rounded font-medium bg-indigo-600 text-white' 
+                : 'px-2.5 py-1 text-xs rounded font-medium text-slate-400 hover:text-white';
+            document.getElementById('time-group-monthly').className = mode === 'monthly' 
+                ? 'px-2.5 py-1 text-xs rounded font-medium bg-indigo-600 text-white' 
+                : 'px-2.5 py-1 text-xs rounded font-medium text-slate-400 hover:text-white';
+
+            applyFilters();
+        }
+
+        // Render Timeline Chart
+        function renderTimelineChart(filteredItems, filteredReceipts) {
+            const ctx = document.getElementById('timelineChart').getContext('2d');
+
+            const receiptDateMap = {};
+            filteredReceipts.forEach(r => { receiptDateMap[r.id] = r.receipt_date; });
+
+            const timeGroupSums = {};
+            filteredItems.forEach(item => {
+                const fullDate = receiptDateMap[item.receipt_id] || '2026-10-01';
+                let key = fullDate;
+                if (currentTimelineGroup === 'monthly') key = fullDate.substring(0, 7);
+
+                timeGroupSums[key] = (timeGroupSums[key] || 0) + (item.line_total || 0);
+            });
+
+            const sortedKeys = Object.keys(timeGroupSums).sort();
+            const dataValues = sortedKeys.map(k => timeGroupSums[k]);
+
+            if (timelineChartInstance) timelineChartInstance.destroy();
+
+            timelineChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sortedKeys,
+                    datasets: [{
+                        label: 'Költés (Ft)',
+                        data: dataValues,
+                        backgroundColor: 'rgba(99, 102, 241, 0.75)',
+                        borderColor: '#6366f1',
+                        borderWidth: 1.5,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: { grid: { color: 'rgba(51, 65, 85, 0.3)' }, ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } } },
+                        y: { 
+                            grid: { color: 'rgba(51, 65, 85, 0.3)' }, 
+                            ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 }, callback: v => formatFt(v) + ' Ft' } 
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => ` Költés: ${formatFt(ctx.raw)} Ft` } }
+                    }
+                }
+            });
+        }
+
+        // Detailed Breakdown Table
+        function renderBreakdownTable(filteredItems, totalSpend) {
+            const tbody = document.getElementById('breakdown-table-body');
+            tbody.innerHTML = '';
+
+            if (filteredItems.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-500">Nincs megjeleníthető tétel. Katints a Frissítés gombra!</td></tr>`;
+                return;
+            }
+
+            const groups = {};
+            filteredItems.forEach(item => {
+                const cat = item.category || 'Egyéb';
+                const sub = item.subcategory || 'egyéb';
+                const key = `${cat}___${sub}`;
+
+                if (!groups[key]) groups[key] = { category: cat, subcategory: sub, count: 0, sum: 0 };
+                groups[key].count += 1;
+                groups[key].sum += (item.line_total || 0);
+            });
+
+            const sortedGroups = Object.values(groups).sort((a, b) => b.sum - a.sum);
+
+            sortedGroups.forEach(g => {
+                const pct = totalSpend > 0 ? ((g.sum / totalSpend) * 100).toFixed(1) : 0;
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-700/30 transition border-b border-slate-700/30";
+                row.innerHTML = `
+                    <td class="p-3 font-medium text-slate-200">${escapeHtml(g.category)}</td>
+                    <td class="p-3 text-slate-400">${escapeHtml(g.subcategory)}</td>
+                    <td class="p-3 text-right text-slate-300 font-mono">${g.count} db</td>
+                    <td class="p-3 text-right font-bold text-indigo-300 font-mono">${formatFt(g.sum)} Ft</td>
+                    <td class="p-3 text-right">
+                        <div class="flex items-center justify-end space-x-2">
+                            <span class="text-xs font-mono text-slate-400">${pct}%</span>
+                            <div class="w-16 bg-slate-700 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-indigo-500 h-1.5 rounded-full" style="width: ${pct}%"></div>
+                            </div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function filterBreakdownTable() {
+            const query = document.getElementById('table-search-input').value.toLowerCase();
+            const rows = document.getElementById('breakdown-table-body').getElementsByTagName('tr');
+            for (let row of rows) {
+                row.style.display = row.innerText.toLowerCase().includes(query) ? '' : 'none';
+            }
+        }
+
+        // Render Receipts Cards Grid
+        function renderReceiptsList() {
+            const grid = document.getElementById('receipts-grid');
+            grid.innerHTML = '';
+
+            const query = (document.getElementById('receipt-search-query').value || '').toLowerCase();
+            const paymentFilter = document.getElementById('receipt-filter-payment').value;
+            const reviewOnly = document.getElementById('receipt-filter-review').checked;
+
+            const dateFrom = document.getElementById('filter-date-from').value;
+            const dateTo = document.getElementById('filter-date-to').value;
+
+            const filtered = activeReceipts.filter(r => {
+                if (dateFrom && r.receipt_date < dateFrom) return false;
+                if (dateTo && r.receipt_date > dateTo) return false;
+                if (paymentFilter !== 'ALL' && r.payment_method !== paymentFilter) return false;
+                if (reviewOnly && r.needs_review !== 1) return false;
+
+                if (query) {
+                    const storeMatch = (r.store || '').toLowerCase().includes(query);
+                    const dateMatch = (r.receipt_date || '').toLowerCase().includes(query);
+                    const addrMatch = (r.store_address || '').toLowerCase().includes(query);
+                    
+                    const rItems = activeItems.filter(i => i.receipt_id === r.id);
+                    const itemMatch = rItems.some(i => 
+                        (i.name_clean || '').toLowerCase().includes(query) || 
+                        (i.name_raw || '').toLowerCase().includes(query) ||
+                        (i.category || '').toLowerCase().includes(query)
+                    );
+
+                    if (!storeMatch && !dateMatch && !addrMatch && !itemMatch) return false;
+                }
+
+                return true;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full p-8 text-center bg-slate-800/50 rounded-2xl border border-slate-700 text-slate-400">
+                        Nincs megjeleníthető nyugta. Ellenőrizd a szerver kapcsolatot vagy kattints a Frissítés gombra!
+                    </div>
+                `;
+                return;
+            }
+
+            filtered.sort((a,b) => (b.receipt_date || '').localeCompare(a.receipt_date || ''));
+
+            filtered.forEach(r => {
+                const rItems = activeItems.filter(i => i.receipt_id === r.id);
+                const card = document.createElement('div');
+                card.className = "bg-slate-800/90 rounded-2xl p-5 border border-slate-700/80 shadow-lg hover:border-indigo-500/50 transition flex flex-col justify-between space-y-4";
+                card.innerHTML = `
+                    <div class="space-y-2">
+                        <div class="flex items-start justify-between gap-2">
+                            <div>
+                                <span class="text-xs font-semibold text-indigo-400 tracking-wider uppercase">${escapeHtml(r.receipt_date || 'N/A')}</span>
+                                <h4 class="font-bold text-slate-100 text-base leading-snug">${escapeHtml(r.store || 'Ismeretlen Üzlet')}</h4>
+                            </div>
+                            ${r.needs_review === 1 ? `
+                                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                    Ellenőrizendő
+                                </span>
+                            ` : ''}
+                        </div>
+
+                        <p class="text-xs text-slate-400 flex items-center gap-1 truncate">
+                            <svg class="w-3.5 h-3.5 flex-shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path></svg>
+                            <span class="truncate">${escapeHtml(r.store_address || 'Cím nem megadott')}</span>
+                        </p>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-700/60 flex items-center justify-between">
+                        <div>
+                            <div class="text-xs text-slate-400">${rItems.length} tétel • ${escapeHtml(r.payment_method || 'kártya')}</div>
+                            <div class="text-xl font-extrabold text-white font-mono">${formatFt(r.total || 0)} Ft</div>
+                        </div>
+
+                        <button onclick="openReceiptModal(${r.id})" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl transition shadow-md flex items-center space-x-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                            <span>Megtekintés</span>
+                        </button>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Open Thermal Paper Receipt View Modal
+        function openReceiptModal(receiptId) {
+            const receipt = activeReceipts.find(r => r.id === receiptId);
+            if (!receipt) return;
+
+            // Törlés gomb összekötése a kiválasztott nyugta ID-jával
+            document.getElementById('modal-delete-btn').onclick = () => deleteReceipt(receiptId);
+
+            const items = activeItems.filter(i => i.receipt_id === receiptId);
+            const container = document.getElementById('modal-receipt-paper');
+
+            let itemsHtml = items.map(item => `
+                <div class="py-1.5 border-b border-dashed border-slate-300 text-xs flex justify-between items-start">
+                    <div class="pr-2">
+                        <div class="font-bold text-slate-900">${escapeHtml(item.name_clean || item.name_raw)}</div>
+                        <div class="text-[11px] text-slate-600">
+                            ${item.quantity || 1} x ${formatFt(item.unit_price || item.line_total)} Ft
+                            <span class="ml-1 text-[10px] bg-slate-200 px-1 rounded text-slate-700">${escapeHtml(item.category || '')}</span>
+                        </div>
+                    </div>
+                    <div class="font-bold font-mono text-slate-900 whitespace-nowrap">
+                        ${formatFt(item.line_total)} Ft
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="text-center space-y-1 pb-4 border-b-2 border-slate-800">
+                    <div class="font-extrabold text-lg uppercase tracking-wider">${escapeHtml(receipt.store || 'NYUGTA')}</div>
+                    <div class="text-xs text-slate-700">${escapeHtml(receipt.store_address || '')}</div>
+                    <div class="text-[11px] text-slate-500 pt-1">DÁTUM: ${escapeHtml(receipt.receipt_date || '')}</div>
+                </div>
+
+                ${receipt.needs_review === 1 ? `
+                    <div class="my-3 p-2 bg-amber-100 border border-amber-300 rounded text-center text-xs font-bold text-amber-800">
+                        ⚠️ Ellenőrzendő nyugta
+                    </div>
+                ` : ''}
+
+                <div class="my-4 space-y-1">
+                    <div class="text-[10px] uppercase font-bold text-slate-500 flex justify-between pb-1 border-b border-slate-300">
+                        <span>Tétel</span>
+                        <span>Összeg</span>
+                    </div>
+                    ${itemsHtml || '<div class="text-center py-2 text-slate-500">Nincsenek részletes tételek.</div>'}
+                </div>
+
+                <div class="pt-2 border-t-2 border-slate-800 space-y-1 text-xs">
+                    <div class="flex justify-between text-slate-700">
+                        <span>TÉTELEK ÖSSZESEN:</span>
+                        <span class="font-mono">${formatFt(receipt.items_sum || receipt.total)} Ft</span>
+                    </div>
+                    <div class="flex justify-between text-slate-700">
+                        <span>FIZETÉSI MÓD:</span>
+                        <span class="uppercase font-semibold">${escapeHtml(receipt.payment_method || 'kártya')}</span>
+                    </div>
+                    <div class="flex justify-between items-center text-base font-extrabold text-slate-950 pt-2 border-t border-slate-400">
+                        <span>VÉGÖSSZEG:</span>
+                        <span class="font-mono text-lg">${formatFt(receipt.total)} Ft</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-4 border-t border-dashed border-slate-400 text-center space-y-2">
+                    <div class="text-[10px] text-slate-500 font-mono tracking-widest uppercase">SHA256 CHECKSUM</div>
+                    <div class="text-[9px] text-slate-600 font-mono break-all bg-slate-100 p-1 rounded border border-slate-200">${escapeHtml(receipt.sha256 || 'N/A')}</div>
+                    <div class="text-[10px] text-slate-500 font-mono pt-2">KÖSZÖNJÜK A VÁSÁRLÁST!</div>
+                </div>
+            `;
+
+            document.getElementById('receipt-modal').classList.remove('hidden');
+        }
+
+        function closeReceiptModal() {
+            document.getElementById('receipt-modal').classList.add('hidden');
+        }
+
+        // Tab Switching
+        function switchTab(tabId) {
+            ['analytics', 'receipts'].forEach(id => {
+                const section = document.getElementById(`tab-${id}`);
+                const navBtn = document.getElementById(`nav-${id}`);
+                const mobBtn = document.getElementById(`mobile-nav-${id}`);
+
+                if (id === tabId) {
+                    section.classList.remove('hidden');
+                    if (navBtn) navBtn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center space-x-2 bg-indigo-600 text-white shadow-sm";
+                    if (mobBtn) mobBtn.className = "flex flex-col items-center text-xs p-2 text-indigo-400 font-semibold";
+                } else {
+                    section.classList.add('hidden');
+                    if (navBtn) navBtn.className = "tab-btn px-4 py-2 rounded-lg text-sm font-medium transition-all duration-150 flex items-center space-x-2 text-slate-400 hover:text-white hover:bg-slate-800";
+                    if (mobBtn) mobBtn.className = "flex flex-col items-center text-xs p-2 text-slate-400";
+                }
+            });
+
+            if (tabId === 'receipts') renderReceiptsList();
+        }
+
+        // Utilities
+        function formatFt(amount) {
+            return new Intl.NumberFormat('hu-HU').format(amount || 0);
+        }
+
+        function formatDateString(dateObj) {
+            const yyyy = dateObj.getFullYear();
+            const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
+            const dd = String(dateObj.getDate()).padStart(2, '0');
+            return `${yyyy}-${mm}-${dd}`;
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600' : type === 'error' ? 'bg-rose-600' : 'bg-indigo-600';
+
+            toast.className = `${bgClass} text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center space-x-2 transform transition duration-300 translate-y-2 opacity-0 pointer-events-auto`;
+            toast.innerHTML = `<span>${escapeHtml(message)}</span>`;
+
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.remove('translate-y-2', 'opacity-0'), 10);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        // Szerver és Cloudflare leállítása gombnyomásra
+        async function shutdownServer() {
+            if (!confirm("Biztosan le akarod állítani a webszervert és a Cloudflare alagutat?")) {
+                return;
+            }
+
+            try {
+                await fetch('/api/shutdown', { method: 'POST' });
+                showToast("Szerver és Cloudflare leállítva!", "error");
+                updateStatus(false, "Szerver leállítva a weblapról");
+                if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+            } catch (e) {
+                showToast("Szerver leállítva!", "error");
+                updateStatus(false, "Szerver leállítva");
+            }
+        }
+
+        // Nyugta törlése az adatbázisból (JSON.stringify javítva)
+        async function deleteReceipt(receiptId) {
+            if (!confirm("Biztosan véglegesen törölni szeretnéd ezt a nyugtát az adatbázisból?")) {
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/delete_receipt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id: receiptId })
+                });
+
+                if (response.ok) {
+                    showToast("Nyugta sikeresen törölve!", "success");
+                    closeReceiptModal();
+                    fetchDataFromApi();
+                } else {
+                    showToast("Hiba történt a törlés során!", "error");
+                }
+            } catch (e) {
+                showToast("Nem sikerült kapcsolódni a szerverhez!", "error");
+            }
+        }
+    </script>
+</body>
+</html>

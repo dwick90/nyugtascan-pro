@@ -1,0 +1,20 @@
+# Érzékeny beállítások
+config.py
+
+# Adatbázis és logok
+*.db
+*.log
+*.error.txt
+
+# Virtuális környezet és gyorsítótárak
+glm_env/
+__pycache__/
+*.pyc
+
+# Nagy méretű AI modellek
+models/*.gguf
+models/*.bin
+!models/.gitkeep
+
+# CUDA DLL-ek és binárisok (100MB feletti méretkorlát miatt)
+bin/
