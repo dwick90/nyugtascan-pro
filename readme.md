@@ -238,15 +238,4 @@ A megnyitott HTTPS linken elérhető a **NyugtaScan Pro Dashboard**:
 
 * **Zárt Adatkezelés**: A nyugták képei, a kinyert OCR szövegek és az SQLite adatbázis kizárólag a helyi gépeden maradnak. A Telegram és Cloudflare hálózatán csak a vezérlő parancs és a Dashboard ideiglenes webcíme halad át.
 * **Hozzáférés-korlátozás**: A `telegram_bot.py` szigorúan ellenőrzi az `ALLOWED_CHAT_ID` értéket. Idegen Telegram fiókok nem tudnak parancsot végrehajtani a gépeden.
-```
-eof
-```
 
-Elkészült a frissített `readme.md` fájl a jobb oldali szerkesztőben. 
-
-A módosítás feltöltéséhez futtasd le a következő parancsokat a PowerShellben:
-
-```powershell
-git add readme.md
-git commit -m "docs: add Telegram setup instructions to README"
-git push
