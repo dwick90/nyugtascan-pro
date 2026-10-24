@@ -23,7 +23,7 @@ from pathlib import Path
 from pillow_heif import register_heif_opener
 
 import requests
-
+import time
 import config
 
 register_heif_opener()
@@ -211,27 +211,47 @@ def repair_json(s: str) -> str:
     return re.sub(r",(\s*[}\]])", r"\1", s)
 
 
-def call_llm(messages) -> dict:
-    resp = requests.post(
-        LLM_URL,
-        json={"model": LLM_MODEL, "messages": messages, "temperature": 0},
-        timeout=LLM_TIMEOUT,
-    )
-    resp.raise_for_status()
-    content = resp.json()["choices"][0]["message"]["content"]
-    content = re.sub(r"<think>.*?</think>", "", content, flags=re.S)  # gondolkodó modellek
-    content = content.replace("```json", "").replace("```", "").strip()
-    start, end = content.find("{"), content.rfind("}")
-    if start == -1 or end == -1:
-        raise LLMFormatError("Az LLM nem adott vissza JSON-t", content)
-    raw_json = content[start:end + 1]
-    err = None
-    for candidate in (raw_json, repair_json(raw_json)):
+import time
+
+def call_llm(messages, retries=12, delay=5) -> dict:
+    """LLM hívása automatikus újrapróbálkozással 503 (Szerver töltődik) vagy csatlakozási hiba esetén."""
+    for attempt in range(retries):
         try:
-            return json.loads(candidate)
-        except json.JSONDecodeError as e:
-            err = e
-    raise LLMFormatError(f"Érvénytelen JSON: {err}", content)
+            resp = requests.post(
+                LLM_URL,
+                json={"model": LLM_MODEL, "messages": messages, "temperature": 0},
+                timeout=LLM_TIMEOUT,
+            )
+            
+            # Ha a szerver még tölti a modellt (503), várunk és újrapróbáljuk
+            if resp.status_code == 503:
+                print(f"    [!] A nyelvi szerver még töltődik (503)... Várakozás {delay} mp ({attempt+1}/{retries})")
+                time.sleep(delay)
+                continue
+                
+            resp.raise_for_status()
+            
+            content = resp.json()["choices"][0]["message"]["content"]
+            content = re.sub(r"<think>.*?</think>", "", content, flags=re.S)
+            content = content.replace("```json", "").replace("```", "").strip()
+            start, end = content.find("{"), content.rfind("}")
+            if start == -1 or end == -1:
+                raise LLMFormatError("Az LLM nem adott vissza JSON-t", content)
+            raw_json = content[start:end + 1]
+            err = None
+            for candidate in (raw_json, repair_json(raw_json)):
+                try:
+                    return json.loads(candidate)
+                except json.JSONDecodeError as e:
+                    err = e
+            raise LLMFormatError(f"Érvénytelen JSON: {err}", content)
+
+        except (requests.exceptions.RequestException, requests.exceptions.HTTPError) as e:
+            if attempt < retries - 1:
+                print(f"    [!] Csatlakozási hiba/várakozás ({e}). Újrapróbálkozás {delay} mp múlva...")
+                time.sleep(delay)
+            else:
+                raise e
 
 
 def normalize(data: dict) -> dict:
