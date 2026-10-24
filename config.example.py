@@ -47,7 +47,7 @@ LLM_TIMEOUT = 300
 
 OCR_MODEL = "zai-org/GLM-OCR"
 OCR_MAX_SIDE = 2200
-IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".webp", ".tiff"}
+IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".bmp", ".webp", ".tiff", ".heic", ".HEIC"}
 
 CATEGORIES = [
     "Étel", "Ital", "Háztartás", "Drogéria/Higiénia", "Szépségápolás",
