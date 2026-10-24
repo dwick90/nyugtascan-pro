@@ -25,6 +25,7 @@ PYTHON_EXE = str(config.PYTHON_EXE)
 CLOUDFLARED_EXE = str(config.CLOUDFLARED_EXE)
 GEMMA_BAT = str(config.GEMMA_BAT)
 INPUT_DIR = config.INPUT_DIR
+IMAGE_EXTS = getattr(config, "IMAGE_EXTS", {".png", ".jpg", ".jpeg", ".bmp", ".webp", ".tiff", ".heic"})
 
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
@@ -77,8 +78,7 @@ def has_pending_receipts():
     if not target_dir.exists():
         return False, 0
     
-    valid_exts = {".png", ".jpg", ".jpeg", ".bmp", ".webp", ".tiff"}
-    found_files = [f for f in target_dir.iterdir() if f.suffix.lower() in valid_exts]
+    found_files = [f for f in target_dir.iterdir() if f.suffix.lower() in IMAGE_EXTS]
     return len(found_files) > 0, len(found_files)
 
 
@@ -117,7 +117,7 @@ def run_pipeline_and_get_url(chat_id):
         # 2. Gemma LLM indítása külön ablakban
         send_telegram_msg(chat_id, "🚀 GLM-OCR kész. Gemma LLM indítása az elemzéshez (2/2 szakasz)...")
         gemma_proc = subprocess.Popen(["cmd.exe", "/c", GEMMA_BAT], creationflags=subprocess.CREATE_NEW_CONSOLE)
-        time.sleep(5)  # Idő a Gemma betöltésére
+        time.sleep(30)  # Idő a Gemma betöltésére
 
         # 3. LLM Elemzés indítása KÜLÖN LÁTHATÓ CMD ABLAKBAN
         send_telegram_msg(chat_id, "🧠 Nyugta adatok strukturálása és mentése az adatbázisba...")
