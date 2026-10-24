@@ -254,4 +254,4 @@ if __name__ == "__main__":
         httpd.serve_forever()
     except KeyboardInterrupt:
         print("\nA szerver leállt.")
-        sys.exit(0)import http.server
+        sys.exit(0)
