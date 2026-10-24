@@ -12,6 +12,9 @@ from urllib.parse import urlparse
 import config
 
 DB_PATH = str(config.DB_PATH)
+OCR_DIR = config.OCR_DIR
+ANALYSIS_DIR = config.ANALYSIS_DIR
+
 
 class ReceiptRequestHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
@@ -71,7 +74,7 @@ class ReceiptRequestHandler(http.server.SimpleHTTPRequestHandler):
             self.wfile.write(err.encode("utf-8"))
 
     def handle_delete_receipt(self):
-        """Nyugta és a hozzá tartozó tételek törlése az adatbázisból"""
+        """Nyugta, a hozzá tartozó tételek ÉS a Drive JSON fájlok törlése"""
         try:
             content_length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(content_length)
@@ -85,19 +88,45 @@ class ReceiptRequestHandler(http.server.SimpleHTTPRequestHandler):
 
             conn = sqlite3.connect(DB_PATH)
             cursor = conn.cursor()
+
+            # 1. Lekérjük a sha256 hash-t a JSON fájlok beazonosításához
+            cursor.execute("SELECT sha256 FROM receipts WHERE id = ?", (receipt_id,))
+            row = cursor.fetchone()
+
+            if row and row[0]:
+                sha256_hash = row[0]
+                hash_prefix = sha256_hash[:12]
+
+                # 2. Törlés az OCR JSON mappából (ocr_json)
+                for f in OCR_DIR.glob(f"*_{hash_prefix}.json"):
+                    try:
+                        f.unlink()
+                        print(f"[+] OCR JSON törölve: {f.name}")
+                    except Exception as e:
+                        print(f"[-] Hiba az OCR JSON törlésekor: {e}")
+
+                # 3. Törlés az Analysis JSON mappából (analysis)
+                for f in ANALYSIS_DIR.glob(f"*_{hash_prefix}.json"):
+                    try:
+                        f.unlink()
+                        print(f"[+] Analysis JSON törölve: {f.name}")
+                    except Exception as e:
+                        print(f"[-] Hiba az Analysis JSON törlésekor: {e}")
+
+            # 4. Rekordok törlése az adatbázisból
             cursor.execute("PRAGMA foreign_keys = ON;")
             cursor.execute("DELETE FROM items WHERE receipt_id = ?", (receipt_id,))
             cursor.execute("DELETE FROM receipts WHERE id = ?", (receipt_id,))
             conn.commit()
             conn.close()
 
-            print(f"[+] Nyugta (ID: {receipt_id}) sikeresen törölve az adatbázisból.")
+            print(f"[+] Nyugta (ID: {receipt_id}) és a kapcsolódó fájlok sikeresen törölve.")
 
             self.send_response(200)
             self.send_header("Content-Type", "application/json; charset=utf-8")
             self.send_header("Access-Control-Allow-Origin", "*")
             self.end_headers()
-            res = json.dumps({"success": True, "message": "Nyugta törölve"}, ensure_ascii=False)
+            res = json.dumps({"success": True, "message": "Nyugta és fájljai törölve"}, ensure_ascii=False)
             self.wfile.write(res.encode("utf-8"))
 
         except Exception as e:
@@ -131,8 +160,10 @@ class ReceiptRequestHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format, *args):
         sys.stdout.write(f"[{self.log_date_time_string()}] {args[0]}\n")
 
+
 def get_local_ip():
     try:
+        s = socket.socket(socket.AF_INET, socket.SOCKET_DGRAM if hasattr(socket, "SOCKET_DGRAM") else socket.AF_INET)
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(("8.8.8.8", 80))
         ip = s.getsockname()[0]
@@ -141,10 +172,11 @@ def get_local_ip():
     except Exception:
         return "127.0.0.1"
 
+
 if __name__ == "__main__":
     PORT = config.SERVER_PORT
     local_ip = get_local_ip()
-    
+
     print("=" * 65)
     print("      NYUGTA & KÖLTÉSEK DASHBOARD SZERVER ELINDULT")
     print("=" * 65)
