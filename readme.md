@@ -1,4 +1,4 @@
-# 🧾 NyugtaScan Pro — Automatisztált Helyi Nyugta- és Költéskezelő
+# 🧾 NyugtaScan Pro — Automatizált Helyi Nyugta- és Költéskezelő
 
 A **NyugtaScan Pro** egy teljesen ön-hosztolt, adatvédelmi szempontból zárt és VRAM-hatékony rendszer, amely papíralapú és digitális nyugtákból automatikusan kinyeri a vásárlási adatokat (üzlet, dátum, tételek, egységárak, kategóriák, végösszeg), majd egy mobilbarát webes dashboardon jeleníti meg azokat.
 
