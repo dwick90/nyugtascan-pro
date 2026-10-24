@@ -58,8 +58,8 @@ def send_email(subject, body):
 def flush_old_updates():
     try:
         url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates?offset=-1"
-        req = urllib.request.urlopen(url)
-        data = json.loads(req.read().decode("utf-8"))
+        with urllib.request.urlopen(url) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
         results = data.get("result", [])
         if results:
             last_id = results[-1]["update_id"]
@@ -94,7 +94,7 @@ def wait_for_llm_server(timeout_seconds=120):
     """Aktívan lekérdezi a llama-server-t, és csak akkor tér vissza True-val, ha a szerver HTTP 200-at ad."""
     print("[+] Várakozás az LLM modell betöltésére (http://localhost:8080/v1/models)...")
     start_time = time.time()
-    
+
     while time.time() - start_time < timeout_seconds:
         try:
             req = urllib.request.Request("http://localhost:8080/v1/models")
@@ -105,7 +105,7 @@ def wait_for_llm_server(timeout_seconds=120):
         except Exception:
             pass
         time.sleep(3)
-        
+
     print("[-] Időtúllépés: Az LLM szerver nem válaszolt a megadott időn belül.")
     return False
 
@@ -134,7 +134,7 @@ def run_pipeline_and_get_url(chat_id):
 
         # 3. Kifejezett megvárás (SOHA nem megy tovább, amíg a llama-server nem áll készen!)
         send_telegram_msg(chat_id, "⏳ Várakozás a nyelvi modell VRAM-ba töltődésére...")
-        
+
         if not wait_for_llm_server(timeout_seconds=120):
             send_telegram_msg(chat_id, "⚠️ A nyelvi modell nem indult el 120 mp alatt! Próbáld újra a /run parancsot.")
             kill_gemma(gemma_proc)
@@ -192,7 +192,7 @@ def run_pipeline_and_get_url(chat_id):
                 f"Üdv,\nNyugta Bot"
             )
             send_email(email_subject, email_body)
-            
+
             # Kilépünk a kimenet olvasásából, így a bot visszatér készenléti állapotba
             break
 
@@ -208,8 +208,8 @@ def main():
     while True:
         try:
             url = f"https://api.telegram.org/bot{BOT_TOKEN}/getUpdates?offset={offset}&timeout=30"
-            req = urllib.request.urlopen(url)
-            data = json.loads(req.read().decode("utf-8"))
+            with urllib.request.urlopen(url) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
 
             for result in data.get("result", []):
                 offset = result["update_id"] + 1
