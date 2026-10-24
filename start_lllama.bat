@@ -18,23 +18,42 @@ set EXE_PATH=%~dp0bin\llama-server.exe
 set MODEL_PATH=%~dp0models\%MODEL_NAME%
 
 :: ======================================================
-:: ELLENŐRZÉSEK
+:: ELLENŐRZÉSEK & AUTO-DOWNLOAD
 :: ======================================================
 if not exist "%EXE_PATH%" (
     echo.
-    echo [HIBA] A llama-server.exe nem található a 'bin' mappában!
-    echo Mappaszerkezet ellenőrzése: bin\llama-server.exe
+    echo [!] A llama-server.exe nem található a 'bin' mappában!
+    echo [+] Letöltés indítása a hivatalos llama.cpp GitHub-ról...
     echo.
-    pause
-    exit /b
+    
+    if not exist "%~dp0bin" mkdir "%~dp0bin"
+    
+    :: Legfrissebb Windows CUDA binárisok letöltése és kicsomagolása
+    powershell -Command "^
+        $ProgressPreference = 'SilentlyContinue'; ^
+        $url = 'https://github.com/ggerganov/llama.cpp/releases/download/b3600/llama-b3600-bin-win-cuda-cu12.2-x64.zip'; ^
+        $zip = '%~dp0bin\llama.zip'; ^
+        Write-Host ' Binárisok letöltése folyamatban...' -ForegroundColor Yellow; ^
+        Invoke-WebRequest -Uri $url -OutFile $zip; ^
+        Write-Host ' Kicsomagolás...' -ForegroundColor Yellow; ^
+        Expand-Archive -Path $zip -DestinationPath '%~dp0bin' -Force; ^
+        Remove-Item $zip;"
+
+    if not exist "%EXE_PATH%" (
+        echo.
+        echo [HIBA] A letöltés vagy kicsomagolás meghiúsult!
+        pause
+        exit /b
+    )
+    echo [+] A llama-server sikeresen telepítve a 'bin' mappába!
+    echo.
 )
 
 if not exist "%MODEL_PATH%" (
     echo.
     echo [HIBA] A megadott modell nem található: models\%MODEL_NAME%
     echo.
-    echo Kérlek, másold be a GGUF fájlodat a 'models' mappába,
-    echo majd nyisd meg a start_llama.bat fájlt és írd át a MODEL_NAME változót!
+    echo Kérlek, másold be a GGUF fájlodat a 'models' mappába!
     echo.
     pause
     exit /b

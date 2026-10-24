@@ -355,7 +355,7 @@
 
     <!-- MODAL: THERMAL PAPER RECEIPT VIEW -->
     <div id="receipt-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden animate-fade-in">
-        <div class="relative w-full max-w-md max-h-[90vh] flex flex-col">
+        <div class="relative w-full max-w-lg max-h-[90vh] flex flex-col">
             
             <!-- Close Button -->
             <button onclick="closeReceiptModal()" class="absolute -top-3 -right-3 z-10 p-2 bg-slate-800 text-slate-300 hover:text-white rounded-full shadow-lg border border-slate-600 transition">
@@ -363,26 +363,34 @@
             </button>
 
             <!-- Thermal Paper Container -->
-            <div id="modal-receipt-paper" class="receipt-paper p-6 rounded-t-sm font-receipt text-slate-900 overflow-y-auto max-h-[80vh]">
+            <div id="modal-receipt-paper" class="receipt-paper p-6 rounded-t-sm font-receipt text-slate-900 overflow-y-auto max-h-[75vh]">
                 <!-- Content generated dynamically -->
             </div>
 
             <!-- Modal Action Buttons -->
-            <div class="bg-slate-800 p-3 rounded-b-xl border-t border-slate-700 flex justify-between items-center">
+            <div class="bg-slate-800 p-3 rounded-b-xl border-t border-slate-700 flex flex-wrap justify-between items-center gap-2">
                 <!-- TÖRLÉS GOMB -->
-                <button id="modal-delete-btn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1.5 shadow-md">
+                <button id="modal-delete-btn" class="px-3 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1 shadow-md">
                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
                     </svg>
                     <span>Törlés</span>
                 </button>
 
-                <div class="flex space-x-2">
-                    <button onclick="window.print()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1.5">
+                <div class="flex items-center space-x-2">
+                    <!-- ELLENŐRIZVE (MENTÉS) GOMB -->
+                    <button id="modal-verify-btn" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1 shadow-md">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Ellenőrizve (Mentés)</span>
+                    </button>
+
+                    <button onclick="window.print()" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition flex items-center space-x-1">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
                         <span>Nyomtatás</span>
                     </button>
-                    <button onclick="closeReceiptModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition">
+                    <button onclick="closeReceiptModal()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition">
                         Bezárás
                     </button>
                 </div>
@@ -397,6 +405,13 @@
 
     <!-- JAVASCRIPT APP LOGIC -->
     <script>
+        // System Categories List
+        const CATEGORIES = [
+            "Étel", "Ital", "Háztartás", "Drogéria/Higiénia", "Szépségápolás",
+            "Baba/Gyerek", "Ruházat", "Szórakozás", "Egészség/Gyógyszer",
+            "Közlekedés/Üzemanyag", "Otthon/Szerszám", "Egyéb"
+        ];
+
         // State Variables
         let activeReceipts = [];
         let activeItems = [];
@@ -404,6 +419,7 @@
         let timelineChartInstance = null;
         let currentTimelineGroup = 'daily';
         let autoRefreshTimer = null;
+        let currentEditingReceiptId = null;
 
         // Auto-load on Page Startup
         window.addEventListener('DOMContentLoaded', () => {
@@ -828,6 +844,17 @@
                 const rItems = activeItems.filter(i => i.receipt_id === r.id);
                 const card = document.createElement('div');
                 card.className = "bg-slate-800/90 rounded-2xl p-5 border border-slate-700/80 shadow-lg hover:border-indigo-500/50 transition flex flex-col justify-between space-y-4";
+                
+                const statusBadgeHtml = r.needs_review === 1 ? `
+                    <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                        ⚠️ Ellenőrizendő
+                    </span>
+                ` : `
+                    <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                        ✅ Ellenőrizve
+                    </span>
+                `;
+
                 card.innerHTML = `
                     <div class="space-y-2">
                         <div class="flex items-start justify-between gap-2">
@@ -835,11 +862,7 @@
                                 <span class="text-xs font-semibold text-indigo-400 tracking-wider uppercase">${escapeHtml(r.receipt_date || 'N/A')}</span>
                                 <h4 class="font-bold text-slate-100 text-base leading-snug">${escapeHtml(r.store || 'Ismeretlen Üzlet')}</h4>
                             </div>
-                            ${r.needs_review === 1 ? `
-                                <span class="px-2 py-0.5 text-[10px] font-bold uppercase rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                                    Ellenőrizendő
-                                </span>
-                            ` : ''}
+                            ${statusBadgeHtml}
                         </div>
 
                         <p class="text-xs text-slate-400 flex items-center gap-1 truncate">
@@ -864,31 +887,55 @@
             });
         }
 
-        // Open Thermal Paper Receipt View Modal
+        // Open Thermal Paper Receipt View Modal with Editable Categories
         function openReceiptModal(receiptId) {
             const receipt = activeReceipts.find(r => r.id === receiptId);
             if (!receipt) return;
 
-            // Törlés gomb összekötése a kiválasztott nyugta ID-jával
+            currentEditingReceiptId = receiptId;
+
+            // Törlés és Ellenőrzés gombok összekötése
             document.getElementById('modal-delete-btn').onclick = () => deleteReceipt(receiptId);
+            document.getElementById('modal-verify-btn').onclick = () => saveAndVerifyReceipt(receiptId);
 
             const items = activeItems.filter(i => i.receipt_id === receiptId);
             const container = document.getElementById('modal-receipt-paper');
 
-            let itemsHtml = items.map(item => `
-                <div class="py-1.5 border-b border-dashed border-slate-300 text-xs flex justify-between items-start">
-                    <div class="pr-2">
-                        <div class="font-bold text-slate-900">${escapeHtml(item.name_clean || item.name_raw)}</div>
-                        <div class="text-[11px] text-slate-600">
-                            ${item.quantity || 1} x ${formatFt(item.unit_price || item.line_total)} Ft
-                            <span class="ml-1 text-[10px] bg-slate-200 px-1 rounded text-slate-700">${escapeHtml(item.category || '')}</span>
+            let itemsHtml = items.map(item => {
+                const optionsHtml = CATEGORIES.map(cat => 
+                    `<option value="${cat}" ${item.category === cat ? 'selected' : ''}>${cat}</option>`
+                ).join('');
+
+                return `
+                    <div class="py-2 border-b border-dashed border-slate-300 text-xs modal-item-row" data-item-id="${item.id}">
+                        <div class="flex justify-between items-start gap-1">
+                            <div class="flex-grow pr-2">
+                                <input type="text" class="item-name-input font-bold text-slate-900 w-full bg-amber-50/50 border border-slate-300 rounded px-1 py-0.5 text-xs focus:outline-none focus:bg-white" value="${escapeHtml(item.name_clean || item.name_raw)}">
+                                <div class="text-[11px] text-slate-600 mt-1 flex items-center gap-1 flex-wrap">
+                                    <span>${item.quantity || 1} x ${formatFt(item.unit_price || item.line_total)} Ft</span>
+                                    <span class="text-slate-400">• Kategória:</span>
+                                    <select class="item-cat-select bg-white border border-slate-300 rounded text-[11px] px-1 py-0.5 text-slate-800 font-sans focus:ring-1 focus:ring-indigo-500">
+                                        ${optionsHtml}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="font-bold font-mono text-slate-900 whitespace-nowrap pt-1">
+                                <input type="number" class="item-total-input w-20 text-right font-bold font-mono text-slate-900 bg-amber-50/50 border border-slate-300 rounded px-1 py-0.5 text-xs focus:outline-none focus:bg-white" value="${item.line_total}"> Ft
+                            </div>
                         </div>
                     </div>
-                    <div class="font-bold font-mono text-slate-900 whitespace-nowrap">
-                        ${formatFt(item.line_total)} Ft
-                    </div>
+                `;
+            }).join('');
+
+            const statusBannerHtml = receipt.needs_review === 1 ? `
+                <div class="my-3 p-2 bg-amber-100 border border-amber-300 rounded-lg text-center text-xs font-bold text-amber-800 flex items-center justify-center gap-1">
+                    <span>⚠️ Ellenőrizendő nyugta</span>
                 </div>
-            `).join('');
+            ` : `
+                <div class="my-3 p-2 bg-emerald-100 border border-emerald-300 rounded-lg text-center text-xs font-bold text-emerald-800 flex items-center justify-center gap-1">
+                    <span>✅ Ellenőrizve</span>
+                </div>
+            `;
 
             container.innerHTML = `
                 <div class="text-center space-y-1 pb-4 border-b-2 border-slate-800">
@@ -897,15 +944,11 @@
                     <div class="text-[11px] text-slate-500 pt-1">DÁTUM: ${escapeHtml(receipt.receipt_date || '')}</div>
                 </div>
 
-                ${receipt.needs_review === 1 ? `
-                    <div class="my-3 p-2 bg-amber-100 border border-amber-300 rounded text-center text-xs font-bold text-amber-800">
-                        ⚠️ Ellenőrzendő nyugta
-                    </div>
-                ` : ''}
+                ${statusBannerHtml}
 
                 <div class="my-4 space-y-1">
                     <div class="text-[10px] uppercase font-bold text-slate-500 flex justify-between pb-1 border-b border-slate-300">
-                        <span>Tétel</span>
+                        <span>Tétel & Kategória (Szerkeszthető)</span>
                         <span>Összeg</span>
                     </div>
                     ${itemsHtml || '<div class="text-center py-2 text-slate-500">Nincsenek részletes tételek.</div>'}
@@ -938,6 +981,50 @@
 
         function closeReceiptModal() {
             document.getElementById('receipt-modal').classList.add('hidden');
+            currentEditingReceiptId = null;
+        }
+
+        // Save & Verify Receipt Items API Call
+        async function saveAndVerifyReceipt(receiptId) {
+            const container = document.getElementById('modal-receipt-paper');
+            const itemRows = container.querySelectorAll('.modal-item-row');
+            const updatedItems = [];
+
+            itemRows.forEach(row => {
+                const itemId = parseInt(row.getAttribute('data-item-id'));
+                const nameClean = row.querySelector('.item-name-input').value.trim();
+                const category = row.querySelector('.item-cat-select').value;
+                const lineTotal = parseInt(row.querySelector('.item-total-input').value) || 0;
+
+                updatedItems.push({
+                    id: itemId,
+                    name_clean: nameClean,
+                    category: category,
+                    line_total: lineTotal
+                });
+            });
+
+            try {
+                const response = await fetch('/api/update_receipt', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: receiptId,
+                        items: updatedItems
+                    })
+                });
+
+                if (response.ok) {
+                    showToast("Nyugta sikeresen frissítve és ellenőrizve!", "success");
+                    closeReceiptModal();
+                    fetchDataFromApi(); // Adatok újratöltése a felületen
+                } else {
+                    showToast("Hiba történt a mentés során!", "error");
+                }
+            } catch (err) {
+                console.error("Mentési hiba:", err);
+                showToast("Nem sikerült kapcsolódni a szerverhez!", "error");
+            }
         }
 
         // Tab Switching
@@ -1016,9 +1103,9 @@
             }
         }
 
-        // Nyugta törlése az adatbázisból (JSON.stringify javítva)
+        // Nyugta törlése az adatbázisból és Drive-ról
         async function deleteReceipt(receiptId) {
-            if (!confirm("Biztosan véglegesen törölni szeretnéd ezt a nyugtát az adatbázisból?")) {
+            if (!confirm("Biztosan véglegesen törölni szeretnéd ezt a nyugtát és a hozzá tartozó fájlokat?")) {
                 return;
             }
 
