@@ -20,10 +20,13 @@ import sqlite3
 import sys
 from datetime import datetime
 from pathlib import Path
+from pillow_heif import register_heif_opener
 
 import requests
 
 import config
+
+register_heif_opener()
 
 INPUT_DIR = config.INPUT_DIR
 OCR_DIR = config.OCR_DIR
